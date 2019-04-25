@@ -1,0 +1,357 @@
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+public class semantic {
+
+  lblinput.setText(str);
+             String input = str;
+   			 String[] words = input.split(" ");
+   			 String operators = "";
+   			   //  String output = "";			    
+   			   //  for(String word : words) {
+   			 for(int totalop = 0;totalop<words.length;totalop++) {
+   				 if(words[totalop].matches("[-,+,/,*]")) {
+   					 operators += words[totalop];
+   				 }
+   			 }
+   			 for(int st = 0;st<words.length;st++) {
+   			    if(words[st].equals("=")) {
+   			    textArea.append("\n\n\t\t\t =\n\t\t\t/   \\\n\t\t    "+words[st-1]+"      ");
+   			    
+   			    if(operators.matches("[-,+,*,/]")) {
+   			    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"   "+words[st+3]);			 		
+   			    }
+   			    
+   			    if(operators.equals("++") ||operators.equals( "//") ||operators.equals("**") ||operators.equals("+-") ||operators.equals("--") ||operators.equals("-+") ||operators.equals("*/") || operators.equals("/*")) {
+   			    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"     "+words[st+4]+"\n\t\t\t\t\t/   \\\n\t\t\t\t\t"+words[st+3]+"    "+words[st+5]);			 		
+   			    }
+   			   
+			    if(operators.equals("*+") ||operators.equals( "/+") ||operators.equals("*-") ||operators.equals("/-")) {
+				    textArea.append(words[st+4]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+2]+"     "+words[st+5]+"\n\t\t\t   /   \\\n\t\t\t   "+words[st+1]+"    "+words[st+3]);			 		
+				}
+			    if(operators.equals("+*") ||operators.equals( "+/") ||operators.equals("-*") ||operators.equals("-/")) {
+				    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"     "+words[st+4]+"\n\t\t\t\t\t/   \\\n\t\t\t\t\t"+words[st+3]+"    "+words[st+5]);			 		
+				}
+   		}      }
+   		     }       //end of for
+	}
+
+void check_stmt(ASTNode* node, ErrorList* errors){
+
+	//<stmt> ===> <ioStmt>
+	if(node->label==PRINT_NODE|| node->label==READ_NODE){
+		
+		check_io_stmt(node,errors);		
+	}
+
+	//<stmt> ===> <funCallStmt>
+	if(node->label==FUNCTIONCALL_NODE){
+		
+		check_function_call_statement(node,errors);
+	}
+
+	//<stmt> ===> <assignmentStmt>  
+	if(node->label == ASSIGNMENTSTMT1_NODE || node->label==ASSIGNMENTSTMT2_NODE){
+
+		check_assignment_statement(node,errors);
+	}
+
+	// <stmt> ===> <conditionalStmt>
+	if(node->label==IF_NODE){
+
+		check_conditional_statement(node,errors);
+
+	}
+
+}
+
+
+
+//<stmt> ===> <assignmentStmt>  
+void check_assignment_statement(ASTNode* node, ErrorList* errors){
+
+	ASTNode* lhs = node->children->head;
+	ASTNode* rhs = node->children->head->next;
+
+	int lhs_datatype;
+	int rhs_datatype;
+
+	SymbolNode* info;
+
+	//<assignmentStmt> ===> <assignmentStmt1>
+	if(node->label==ASSIGNMENTSTMT1_NODE){
+
+		//Find the datatype of lhs - ID
+		if(lhs->nodeType==ERROR){
+			lhs_datatype = ERROR;
+		}
+		else{
+			//Mark the variable as assigned
+			info = findInfo(lhs);			
+			info->symbol->assigned = 1;
+			//printf("%s\n",lhs->lexicalTOKEN->lexeme);
+			lhs_datatype = lhs->nodeType;
+		}
+
+		/************************************************************************************/
+
+		//Get rhs datatype
+		
+		//<rightHandSide1> ===> <size_exp>
+		int undeclared_variable = 0;
+		if(rhs->label==SIZEEXP_NODE){
+			get_type_sizeexp(rhs,&undeclared_variable,errors);			
+		}
+
+		//<rightHandSide1> ===> <arithmeticExpression>
+		else{
+			get_type_arithmetic_exp(rhs,&undeclared_variable,errors);			
+		}
+		
+		rhs_datatype = rhs->nodeType;
+
+		/************************************************************************************/
+
+		//If either of them is ERROR, then no need to match
+		if(lhs_datatype==ERROR || rhs_datatype==ERROR){			
+
+			if(lhs_datatype==ERROR){
+				char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+				sprintf(str,"Error: Invalid LHS for Assignment Statement");
+				add_error(errors,str,node->line_no);
+				//REPORT ERROR - invalid lhs
+			}
+			if(rhs_datatype==ERROR){
+				char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+				sprintf(str,"Error: Invalid RHS for Assignment Statement");
+				add_error(errors,str,node->line_no);
+				//REPORT ERROR - invalid rhs
+			}
+			
+			return;			
+		}
+
+		//If both lhs and rhs are valid types, then check for match
+		if(lhs_datatype!=rhs_datatype){
+
+			char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+			sprintf(str,"Error: Type mismatch for assignment statement");
+			add_error(errors,str,node->line_no);
+			//REPORT ERROR - LHS mismatch RHS
+		}
+
+		//Check the string size
+		if(lhs_datatype==STRING && rhs_datatype==STRING){
+			if(rhs->str_length!=0)
+				info->symbol->width = rhs->str_length;		
+		}
+
+		//Check the matrix size
+		if(lhs_datatype==MATRIX && rhs_datatype==MATRIX){
+
+			if(rhs->dimension1!=0 && rhs->dimension2!=0){
+				info->symbol->width = rhs->dimension1*rhs->dimension2*2;
+				info->symbol->dimension1 = rhs->dimension1;
+				info->symbol->dimension2 = rhs->dimension2;
+				
+			}			
+		}
+
+
+	}
+
+	/****************************************************************************************/
+
+	//<assignmentStmt> ===> <assignmentStmt2>
+	if(node->label == ASSIGNMENTSTMT2_NODE){
+
+		ASTNode* temp = lhs;
+		int undeclared_variable = 0;
+
+		//<rightHandSide2> ===> <functionCall>
+		if(rhs->label==FUNCTIONCALL_NODE){
+			get_type_function_call(rhs, &undeclared_variable,errors);
+		}
+
+		//<rightHandSide2> ===> <size_exp>
+		else{
+			get_type_sizeexp(rhs,&undeclared_variable,errors);		
+		}
+
+		if(rhs->nodeType==ERROR){
+
+				//REPORT ERROR - Undefined RHS call
+				char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+				sprintf(str,"Error: Invalid RHS for the assignment statement");
+				add_error(errors,str,node->line_no);
+
+				return;
+		}
+
+		//Now match the type and number of parameters
+		TypeNode* return_parameter = rhs->return_parameters->head;
+		
+		int x = 1;
+		while(temp!=NULL && return_parameter!=NULL){
+
+			//Mark the variable as assigned
+			if(temp->nodeType!=ERROR){
+				SymbolNode* info = findInfo(temp);
+				info->symbol->assigned = 1;
+			}
+
+			lhs_datatype = temp->nodeType;
+			rhs_datatype = return_parameter->type;
+
+			if(lhs_datatype!=rhs_datatype){
+				char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+				sprintf(str,"Error: Type Mismatch for Output parameter number %d",x);
+				add_error(errors,str,node->line_no);
+				//REPORT MISMATCH
+			}
+
+
+			temp = temp->concat;
+			return_parameter = return_parameter->next;
+			x++;
+		}
+
+		if(return_parameter!=NULL || temp!=NULL){
+			char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+			sprintf(str,"Error: Number of receiving parameters for the function call is not equal to number of returned parameters");
+			add_error(errors,str,node->line_no);
+			//REPORT ERROR
+
+			return;
+		}
+		
+
+	}
+
+}
+
+// <stmt> ===> <conditionalStmt>
+void check_conditional_statement(ASTNode* node, ErrorList* errors){
+
+	int undeclared_variable = 0;
+
+	get_type_boolean_exp(node->children->head, &undeclared_variable,errors);
+
+	//Go to other statements inside if
+	ASTNode* temp = node->children->head->next;
+
+	while(temp!=NULL){
+
+		if(temp->label==FUNCTIONDEF_NODE){
+			semantic_analyzer_util(temp,errors);
+		}
+		else{
+			check_stmt(temp,errors);
+		}
+		
+		temp = temp->concat;
+	} 
+
+	//Check for the else part
+	temp = node->children->head->next->next;
+
+	//If no else part
+	if(temp==NULL){
+		return;
+	}
+
+	temp = temp->children->head;
+
+	//Traverse through the statements in else part
+	while(temp!=NULL){
+
+		if(temp->label==FUNCTIONDEF_NODE){
+			semantic_analyzer_util(temp,errors);
+		}
+		else{
+			check_stmt(temp,errors);
+		}
+		
+		temp = temp->concat;
+	}
+}
+
+
+void check_io_stmt(ASTNode* node, ErrorList* errors){
+
+	int undeclared_variable=0;
+
+	ASTNode* id = node->children->head;
+
+
+	//If the variable is undeclared
+	if(id->nodeType==ERROR){
+		node->nodeType = ERROR;
+		undeclared_variable = 1;
+	}
+
+	//Otherwise get its datatype
+	else{
+
+		int datatype = id->nodeType;
+
+		node->nodeType = datatype;
+
+		//Print Statement
+		if(node->label==PRINT_NODE){
+			//Check whether the variable is initialized or not
+			check_assigned(id,errors);		
+		}
+
+		//Read Statement
+		else{
+
+			if(datatype==STRING || datatype==MATRIX){
+				node->nodeType = ERROR;
+
+				char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+				sprintf(str,"Error: Read statement can only have int or real datatype as input");
+				add_error(errors,str,node->line_no);
+				//REPORT ERROR
+			}
+			else{
+				//Check whether the variable is initialized or not
+				SymbolNode* info = findInfo(id);			
+				info->symbol->assigned = 1;
+
+				//For Code generation
+				if(datatype==INT){
+					info->symbol->val = (int*)malloc(sizeof(int));
+					info->symbol->val[0] = 0;
+				}
+				/*************************************/
+				
+			}
+		}
+
+	}	
+}
+
+
+
+void check_function_call_statement(ASTNode* node, ErrorList* errors){
+
+	int undeclared_variable = 0;
+	get_type_function_call(node,&undeclared_variable,errors);
+
+	if(undeclared_variable==1){		
+		return;
+	}	
+
+	//Check it has no output parameters	
+	if(node->return_parameters!=NULL){
+
+		char* str = (char*)malloc(sizeof(str)*ERROR_STRING_SIZE);
+		sprintf(str,"Error: The function call has returned parameters but nothing to receive them");
+		add_error(errors,str,node->line_no);  }
+
+}
