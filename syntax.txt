@@ -1,0 +1,75 @@
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
+import javax.swing.JButton;
+import java.awt.Color;
+import java.awt.event.ActionListener;
+import java.util.Stack;
+import java.awt.event.ActionEvent;
+
+public class syntax{
+lblinput.setText(str);
+			 String input = str;
+			 String[] words = input.split(" ");
+			 String operators = "";
+			   //  String output = "";			    
+			   //  for(String word : words) {
+			 for(int totalop = 0;totalop<words.length;totalop++) {
+				 if(words[totalop].matches("[-,+,/,*]")) {
+					// count++;
+					 operators += words[totalop];
+				 }
+			 }
+			 for(int st = 0;st<words.length;st++) {
+			    if(words[st].equals("=")) {
+			    textArea.append("\n\n\t\t\t =\n\t\t\t/   \\\n\t\t    "+words[st-1]+"      ");
+			    
+			    if(operators.matches("[-,+,*,/]")) {
+			    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"   "+words[st+3]);			 		
+			    }
+			    
+			    if(operators.equals("--") || operators.equals("++") ||operators.equals( "//") ||operators.equals("**") ||operators.equals("+-") ||operators.equals("-+") ||operators.equals("*/") || operators.equals("/*")) {
+			    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"     "+words[st+4]+"\n\t\t\t\t\t/   \\\n\t\t\t\t\t"+words[st+3]+"    "+words[st+5]);			 		
+			    }
+			    
+			    if(operators.equals("*+") ||operators.equals( "/+") ||operators.equals("*-") ||operators.equals("/-")) {
+				    textArea.append(words[st+4]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+2]+"     "+words[st+5]+"\n\t\t\t   /   \\\n\t\t\t   "+words[st+1]+"    "+words[st+3]);			 		
+				}
+			    
+			    if(operators.equals("+*") ||operators.equals( "+/") ||operators.equals("-*") ||operators.equals("-/")) {
+				    textArea.append(words[st+2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st+1]+"     "+words[st+4]+"\n\t\t\t\t\t/   \\\n\t\t\t\t\t"+words[st+3]+"    "+words[st+5]);			 		
+				}
+			 /* for(int st2 = st+1;st2<words.length;st2++) {
+				// if(isoperator(words[st2])
+				 if(words[st2].matches("[+,-,*,/]") && !(count>1)) {
+				 textArea.append(words[st2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st2-1]+"   "+words[st2+1]);			 
+				 }
+				// if(isoperator(words[st2]) && (count>1))
+				 else {
+				 if(words[st2].matches("[+,-]"))
+				 { textArea.append(words[st2]+"\n\t\t\t\t/   \\\n\t\t\t\t"+words[st2-2]+"   "+words[st2+1]+"\n\t\t\t  /   \\\n\t\t\t "+words[st-3]+"  "+words[st-1]);			 
+					 break; }
+				 }
+				// if(words[st2].equals)
+			 }  */
+		}      }
+		     }       //end of for
+public static int precedence(char operator)
+		 {
+		     if(operator == '+' || operator =='-')
+		         return 1;
+		     else if(operator == '*' || operator == '/')
+		         return 2;
+		     else
+		         return 0;
+		 }//End of priority method
+
+		 public boolean isoperator(String element)
+		 {
+		     if(element.matches("[-,+,/,*]")) // || element == "-" || element == "/" || element == "+")
+		     {  // count++; 
+		    	 return true;  
+		     }
+		     else
+		         return false;
+		 }//End of isOperator method
